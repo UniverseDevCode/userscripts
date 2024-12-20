@@ -1,0 +1,55 @@
+// ==UserScript==
+// @name         Reddit Bypass Enhancer
+// @namespace    https://greasyfork.org/en/users/1030895-universedev
+// @version      1.2
+// @description  Bypass the "open in app prompt" and unblur NSFW content on Reddit automatically.
+// @author       UniverseDev
+// @license      GPL-3.0-or-later
+// @match        https://www.reddit.com/*
+// @match        https://sh.reddit.com/*
+// @grant        none
+// @run-at       document-end
+// @noframes
+// ==/UserScript==
+'use strict';
+ 
+(function () {
+    const NSFW_MODAL_TAG = 'shreddit-async-loader';
+    const NSFW_MODAL_ATTR = 'bundlename';
+    const BLURRED_TAG = 'shreddit-blurred-container';
+    const PROMPT_SELECTOR = 'xpromo-nsfw-blocking-container';
+ 
+    function removeNSFWBlock() {
+        const nsfwModal = document.querySelector(`${NSFW_MODAL_TAG}[${NSFW_MODAL_ATTR}*="nsfw_blocking_modal"]`);
+        if (nsfwModal) nsfwModal.remove();
+ 
+        const prompt = document.querySelector(`${PROMPT_SELECTOR} > *`)?.shadowRoot?.querySelector('.prompt');
+        if (prompt) prompt.remove();
+ 
+        const blurredContainers = document.querySelectorAll(BLURRED_TAG);
+        blurredContainers.forEach(container => {
+            if (container.shadowRoot?.innerHTML) {
+                container.firstElementChild.click();
+            }
+        });
+    }
+ 
+    const observer = new MutationObserver(() => {
+        removeNSFWBlock();
+    });
+ 
+    observer.observe(document, {
+        childList: true,
+        subtree: true,
+        attributes: false,
+    });
+ 
+    removeNSFWBlock();
+ 
+    const shredditCheckInterval = setInterval(() => {
+        if (!document.querySelector('shreddit-app')) {
+            observer.disconnect();
+            clearInterval(shredditCheckInterval);
+        }
+    }, 5000);
+})();
